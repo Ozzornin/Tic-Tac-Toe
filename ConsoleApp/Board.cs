@@ -52,6 +52,7 @@ namespace ConsoleApp
         public void RestoreCell(int n)
         {
             board[n / 3, n % 3] = (char)('1'+ n);
+            Console.WriteLine();
         }
 
         public bool IsCellEmpty(int n)
