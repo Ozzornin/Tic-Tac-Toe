@@ -16,45 +16,68 @@ namespace ConsoleApp
         public Board GameBoard;
         public Stack<Cell> Moves = new Stack<Cell>();
         public Player CurrentPlayer;
+        private int _playerCount = 2;
+
+        public void Run()
+        {
+            InitGame();
+            StartGame();
+            EndGame();
+        }
 
         public void InitGame()
         {
-            for(int i=1; i<=2; i++)
+            Console.Write("\nDo you want to play with bot?\nPress Y to confirm\n");
+            if (Console.ReadKey().Key == ConsoleKey.Y)
+                _playerCount = 1;
+            Console.Clear();
+            for (int i = 1; i <= _playerCount; i++)
             {
-                Console.Write($"\nPlayer {i} nickname: ");
-                string name = Console.ReadLine();                
-                char sign;
-                do {
-                    Console.Write($"Player {i} sign: ");
-                    try
-                    {
-                        sign = char.Parse(Console.ReadLine());
-                    }
-                    catch ( Exception e ) {
-                        Console.WriteLine("Wrong sign, try again...");
-                        continue;
-                    }                     
-                    if (Char.IsLetter(sign))
-                    {
-                        bool isUsed = false;
-                        foreach(Player p in Players)
-                        {
-                            isUsed = p.Sign == sign;                                                                     
-                        }
-                        if (isUsed)
-                        {
-                            Console.WriteLine("This sign is used by another player. Try again..");
-                            continue;
-                        }                        
-                        break;
-                    }                       
-                    else Console.WriteLine("Wrong sign, try again...");
-                }
-                while (true);                               
-                Players.Add(new Player(name, sign));
-                Console.Clear();
+                AddPlayer(i);
             }
+
             GameBoard = new Board();
+            if (_playerCount == 1)
+            {
+                Players.Add(Bot.CreateBot(Players[0].Sign, GameBoard));
+            }
+        }
+
+        private void AddPlayer(int playerIndex)
+        {
+            Console.Write($"\nPlayer {playerIndex} nickname: ");
+            string name = Console.ReadLine();
+            char sign;
+            do
+            {
+                Console.Write($"Player {playerIndex} sign: ");
+                try
+                {
+                    sign = char.Parse(Console.ReadLine());
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Wrong sign, try again...");
+                    continue;
+                }
+                if (Char.IsLetter(sign))
+                {
+                    bool isUsed = Players.Any(p => p.Sign == sign);
+                    if (isUsed)
+                    {
+                        Console.WriteLine("This sign is used by another player. Try again..");
+                        continue;
+                    }
+                    break;
+                }
+                else
+                {
+                    Console.WriteLine("Wrong sign, try again...");
+                }
+            } while (true);
+
+            Players.Add(new Player(name, sign));
+            Console.Clear();
         }
 
         public void StartGame()
@@ -65,68 +88,77 @@ namespace ConsoleApp
             {
                 string n;
                 do
-                {
-                    if(Moves.Count!=0)
+                {                    
+                    if (CurrentPlayer is Bot)
+                    {
+                        Bot botPlayer = (Bot)CurrentPlayer;
+                        int num = botPlayer.GetBestMove();
+                        n = num.ToString();
+                        break;
+                    }
+                    if (Moves.Count != 0)
                         Console.WriteLine("\nYou can cancel previous move by typing 'prev'");
 
                     Console.Write("\nSelect cell: ");
                     n = Console.ReadLine().Trim();
 
-                    if(n == "prev")
+                    if (n == "prev")
                     {
-                        if(Moves.Count !=0)
-                        {
-                            int cell = Moves.Pop().cellNumber;
-                            GameBoard.RestoreCell(cell-1);
-                            NextPlayer();
-                            Update();                          
-                        }
-                        else
-                        {
-                            Console.WriteLine("Make the first move!");                            
-                        }
+                        Undo();
                         continue;
-                    }
+                    }                    
 
                     try
                     {
                         int.Parse(n);
                     }
-                    catch {
+                    catch
+                    {
                         Console.Write("There is no such cell as " + n);
                         continue;
                     }
 
                     int number = int.Parse(n);
 
-                    if(number<1 || number > 9)
+                    if (number < 1 || number > 9)
                     {
                         Console.Write("There is no such cell as " + number);
                         continue;
                     }
 
-                    if (GameBoard.IsCellEmpty(int.Parse(n)-1))
+                    if (GameBoard.IsCellEmpty(number - 1))
                         break;
 
-                    Console.WriteLine("This cell is not empty! Select another one");                                      
+                    Console.WriteLine("This cell is not empty! Select another one");
                 } while (true);
 
-                GameBoard.MarkCell(int.Parse(n)-1, CurrentPlayer.Sign);                
+                GameBoard.MarkCell(int.Parse(n) - 1, CurrentPlayer.Sign);
                 Moves.Push(new Cell(int.Parse(n), CurrentPlayer.Sign));
-                if(Moves.Count >= 5)
+                if (Moves.Count >= 5)
                 {
-                    foreach(Player p in Players)
+                    if(GameBoard.IsFull())
                     {
-                        if(GameBoard.CheckWinner(p.Sign))
+                        Update();
+                        Console.WriteLine("Draw!");
+                        if (WantsToContinue())
+                        {
+                            ResetGameState();
+                        }
+                        else
+                        {
+                            return;
+                        }
+                    }
+                    for(int i=0; i<Players.Count; i++)
+                    {
+                        if (GameBoard.CheckWinner(Players[i].Sign))
                         {
                             Update();
-                            Console.WriteLine(p.Name  + " won!");
-                            p.IncrementScore();
-                            Console.WriteLine("Do you want to continue the game?(y/n)");
-                            if(Console.ReadKey().Key == ConsoleKey.Y)
+                            Console.WriteLine(Players[i].Name + " won!");
+                            Players[i].IncrementScore();
+                            if (WantsToContinue())
                             {
-                                GameBoard = new Board();
-                                Moves = new Stack<Cell>();  
+                                ResetGameState();
                             }
                             else
                             {
@@ -136,10 +168,48 @@ namespace ConsoleApp
                     }
                 }
                 NextPlayer();
-                Update();                
+                Update();
             } while (true);
+        }
 
-            return;
+        private bool WantsToContinue()
+        {
+            Console.WriteLine("Do you want to continue the game? (y/n)");
+            return Console.ReadKey().Key == ConsoleKey.Y;
+        }
+        //method is used to reset last choise of current player
+        // if player plays in single player it restores his and bot last choise
+        private void Undo()
+        {
+            bool singleGame = Players[1] is Bot;
+            int requiredMoves = singleGame ? 0 : 1;
+            if (Moves.Count > requiredMoves)
+            {
+                int cell;
+                if (singleGame)
+                {
+                    cell = Moves.Pop().cellNumber;
+                    GameBoard.RestoreCell(cell - 1);
+                }
+                else
+                    NextPlayer();
+                cell = Moves.Pop().cellNumber;
+                GameBoard.RestoreCell(cell - 1);               
+                Update();
+            }
+            else
+            {
+                Console.WriteLine("You can't do this now");
+            }
+        }
+        //resets game state if player want to continue the game
+        // it need to create new bot and send him new board to work properly
+        private void ResetGameState()
+        {
+            GameBoard = new Board();
+            if (Players[1] is Bot)
+                Players[1] = Bot.CreateBot(Players[0].Sign, GameBoard, Players[1].GameScore);
+            Moves = new Stack<Cell>();
         }
 
         public void EndGame()
@@ -155,8 +225,7 @@ namespace ConsoleApp
                 Console.Write(p.GameScore.ToString().PadRight(10) + "|");
 
         }
-
-
+        //method is used to Update visuals of user and make Board display up to date
         public void Update()
         {
             Console.Clear();
@@ -182,7 +251,7 @@ namespace ConsoleApp
             foreach (Player p in Players)
                 Console.Write(p.GameScore.ToString().PadRight(10) + "|");
 
-            Console.WriteLine("\n\n"+ GameBoard.ToString());
+            Console.WriteLine("\n\n" + GameBoard.ToString());
         }
 
         public void NextPlayer()
@@ -190,11 +259,12 @@ namespace ConsoleApp
             Save();
             int players = Players.Count;
             int i = Players.IndexOf(CurrentPlayer);
-            if (i == -1 || i == players - 1) {
+            if (i == -1 || i == players - 1)
+            {
                 CurrentPlayer = Players[0];
                 return;
             }
-            CurrentPlayer = Players[i + 1];            
+            CurrentPlayer = Players[i + 1];
         }
 
         private void Save()
@@ -206,4 +276,5 @@ namespace ConsoleApp
             }
         }
     }
+
 }

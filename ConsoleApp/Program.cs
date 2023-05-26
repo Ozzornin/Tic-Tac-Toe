@@ -15,6 +15,7 @@ namespace ConsoleApp
             Console.WriteLine("Do you want to load your last game?(y/n)");
             if(Console.ReadKey().Key == ConsoleKey.Y)
             {
+                Console.Clear();
                 Game savedGame;
                 using (Stream stream = File.Open("game.bin", FileMode.Open))
                 {
@@ -26,6 +27,7 @@ namespace ConsoleApp
                 Console.ReadLine();
                 return;
             }
+            Console.Clear();
             Game game = new Game();
             game.InitGame();
             game.StartGame();

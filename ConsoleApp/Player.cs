@@ -24,5 +24,9 @@ namespace ConsoleApp
             GameScore++;
         }
 
+        internal int GetBestMove()
+        {
+            throw new NotImplementedException();
+        }
     }
 }
