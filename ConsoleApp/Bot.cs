@@ -8,6 +8,9 @@ using System.Threading.Tasks;
 
 namespace ConsoleApp
 {
+    //bot is using minimax algorithm to make it unbeatable
+    // you can try to beat him, but it's impossible
+
     [Serializable]
     public class Bot : Player
     {
@@ -20,6 +23,10 @@ namespace ConsoleApp
             _board = board;
         }
 
+        // Starting point of the Minimax algorithm.
+        // Here, the bot can choose its next move.
+        // However, firstly, it needs to predict all possible game results
+        // and then it will choose the best move based on those predictions.
         public int GetBestMove()
         {
             int bestScore = int.MinValue;
@@ -31,9 +38,11 @@ namespace ConsoleApp
                 {
                     char prevSign = _board.board[move / 3, move % 3];
                     _board.board[move / 3, move % 3] = this.Sign;
+                    
+                    // oooh sh*t, here we go again...
                     int score = Minimax(_board.board, 0, false);
+
                     _board.board[move / 3, move % 3] = prevSign;
-                    //Console.WriteLine($"{move / 3} {move % 3} = {score}");
                     if (score > bestScore)
                     {
                         bestScore = score;
@@ -41,10 +50,23 @@ namespace ConsoleApp
                     }
                 }
             }
-            /*Console.WriteLine(bestMove);
-            Console.ReadKey();*/
             return bestMove + 1;
         }
+
+
+
+
+        // This method collects the predicted board state and, based on that,
+        // makes the next moves to simulate the end of the game.
+
+        // When the predicted game reaches its conclusion, the method
+        // returns a value that depends on the results.
+
+        // It returns -1 when the bot is beaten by a player.
+        // ---In this case, the bot's previous move is rejected, and it tries another move.
+
+        // It returns 1 when the bot wins the game.
+        // ---In this case, it returns to the first choice and makes that move in the actual game.
 
         private int Minimax(char[,] board, int depth, bool isMaximizingPlayer)
         {
@@ -98,19 +120,17 @@ namespace ConsoleApp
 
         private int Evaluate(char[,] board)
         {
-            // Перевірка на перемогу гравця чи суперника
             if (CheckWin(board, this.Sign))
                 return 1;
 
             if (CheckWin(board, _playerSign))
                 return -1;
 
-            return 0; // Нічия
+            return 0; 
         }
 
         private bool CheckWin(char[,] board, char sign)
         {
-            // Перевірка всіх можливих комбінацій для перемоги
             for (int i = 0; i < 3; i++)
             {
                 if (board[i, 0] == sign && board[i, 1] == sign && board[i, 2] == sign)

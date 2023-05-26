@@ -177,7 +177,8 @@ namespace ConsoleApp
             Console.WriteLine("Do you want to continue the game? (y/n)");
             return Console.ReadKey().Key == ConsoleKey.Y;
         }
-
+        //method is used to reset last choise of current player
+        // if player plays in single player it restores his and bot last choise
         private void Undo()
         {
             bool singleGame = Players[1] is Bot;
@@ -201,7 +202,8 @@ namespace ConsoleApp
                 Console.WriteLine("You can't do this now");
             }
         }
-
+        //resets game state if player want to continue the game
+        // it need to create new bot and send him new board to work properly
         private void ResetGameState()
         {
             GameBoard = new Board();
@@ -223,7 +225,7 @@ namespace ConsoleApp
                 Console.Write(p.GameScore.ToString().PadRight(10) + "|");
 
         }
-
+        //method is used to Update visuals of user and make Board display up to date
         public void Update()
         {
             Console.Clear();
