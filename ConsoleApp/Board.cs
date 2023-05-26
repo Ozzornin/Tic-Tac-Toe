@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.Eventing.Reader;
 using System.Linq;
 using System.Reflection.Emit;
 using System.Text;
@@ -93,5 +94,16 @@ namespace ConsoleApp
 
             return false;
         }
+        
+        public bool IsFull()
+        {
+            for(int i = 0;i < 3;i++)
+                for(int j = 0;j<3;j++)
+                    if (!Char.IsLetter(board[i,j]))
+                        return false;
+            return true;
+        }
+
+
     }
 }

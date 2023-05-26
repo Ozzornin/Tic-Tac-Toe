@@ -53,7 +53,7 @@ namespace ConsoleApp
             if (score != 0)
                 return score;
 
-            if (IsBoardFull(board))
+            if (_board.IsFull())
                 return 0;
 
             if (isMaximizingPlayer)
@@ -127,22 +127,7 @@ namespace ConsoleApp
                 return true;
 
             return false;
-        }
-
-        private bool IsBoardFull(char[,] board)
-        {
-            // Перевірка, чи заповнено всі клітинки на дошці
-            for (int row = 0; row < 3; row++)
-            {
-                for (int col = 0; col < 3; col++)
-                {
-                    if (board[row, col] != _playerSign && board[row, col] != this.Sign) 
-                        return false;
-                }
-            }
-
-            return true;
-        }
+        }       
         
         public static Bot CreateBot(char playerSign, Board board, int points = 0)
         {

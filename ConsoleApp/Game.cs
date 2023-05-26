@@ -16,7 +16,7 @@ namespace ConsoleApp
         public Board GameBoard;
         public Stack<Cell> Moves = new Stack<Cell>();
         public Player CurrentPlayer;
-        private int _playerCount = 1;
+        private int _playerCount = 2;
 
         public void Run()
         {
@@ -27,10 +27,10 @@ namespace ConsoleApp
 
         public void InitGame()
         {
-            Console.Write("\nDo you want to play with bot?\n Press Y to confirm\n");
+            Console.Write("\nDo you want to play with bot?\nPress Y to confirm\n");
             if (Console.ReadKey().Key == ConsoleKey.Y)
                 _playerCount = 1;
-
+            Console.Clear();
             for (int i = 1; i <= _playerCount; i++)
             {
                 AddPlayer(i);
@@ -88,7 +88,7 @@ namespace ConsoleApp
             {
                 string n;
                 do
-                {
+                {                    
                     if (CurrentPlayer is Bot)
                     {
                         Bot botPlayer = (Bot)CurrentPlayer;
@@ -136,6 +136,19 @@ namespace ConsoleApp
                 Moves.Push(new Cell(int.Parse(n), CurrentPlayer.Sign));
                 if (Moves.Count >= 5)
                 {
+                    if(GameBoard.IsFull())
+                    {
+                        Update();
+                        Console.WriteLine("Draw!");
+                        if (WantsToContinue())
+                        {
+                            ResetGameState();
+                        }
+                        else
+                        {
+                            return;
+                        }
+                    }
                     for(int i=0; i<Players.Count; i++)
                     {
                         if (GameBoard.CheckWinner(Players[i].Sign))
